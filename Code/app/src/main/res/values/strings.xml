@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Wastebin Monitor</string>
+    <string name="sign_in_btn_text">Sign in using Google</string>
+    <string name="login_message">Clean India means every street ,every \n village and every city of india \n must be clean</string>
+    <string name="cancel">Cancel</string>
+    <string name="wastebin_options">Wastebin Options</string>
+    <string name="choose_action">Choose Action</string>
+    <string name="capture_photo">Capture Photo</string>
+    <string name="capture">Capture</string>
+    <string name="capture_waste_image">Capture Waste Image</string>
+    <string name="select_language">Select Language</string>
+    <string name="hindi">हिंदी</string>
+    <string name="images_not_found">Images not found</string>
+    <string name="clean">Clean</string>
+    <string name="not_clean">Not clean</string>
+    <string name="accept">Accept</string>
+    <string name="info_text">Please give the permissions for using the application "\n " Permissions > Allow all</string>
+    <string name="image">Photo</string>
+    <string name="helpline_number">(Helpline number)</string>
+    <string name="helpline_message">Proceed to call</string>
+</resources>
