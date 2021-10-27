@@ -158,11 +158,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkImageSto() {
-        Log.d("TAG", "checkImageSto:A ");
         if (backUpPref.getString("imageName", null) != null) {
-
             StorageMetadata metadata = new StorageMetadata.Builder().setContentType("json").build();
-
             stoRef.child(backUpPref.getString("imageNameFirebase", null))
                     .putFile(Uri.fromFile(getFile(backUpPref.getString("imageName", null))), metadata)
                     .addOnCompleteListener(task -> {
@@ -171,16 +168,13 @@ public class MainActivity extends AppCompatActivity {
                             checkDataRDMS();
                         }
                     });
-
         } else {
             checkDataRDMS();
         }
     }
 
     private void checkDataRDMS() {
-        Log.d("TAG", "checkImageSto:B ");
         if (backUpPref.getString("data", null) != null) {
-
             try {
                 JSONObject obj = new JSONObject(backUpPref.getString("data", null));
                 rootRef.child("WastebinMonitor/ImagesData/" + cmn.getYear() + "/" + cmn.getMonth() + "/" + cmn.getDate() + "/" + backUpPref.getString("cat", null) + "/" + backUpPref.getInt("key", 0))
@@ -190,36 +184,29 @@ public class MainActivity extends AppCompatActivity {
                             backUpPref.edit().remove("data").apply();
                             checkImageRDMS();
                         });
-
-
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
         } else {
             checkImageRDMS();
         }
     }
 
     private void checkImageRDMS() {
-        Log.d("TAG", "checkImageSto:C ");
         if (backUpPref.getString("imageNameFirebase", null) != null) {
-
-            rootRef.child("WastebinMonitor/UserImageRef/" + userId).push().setValue(backUpPref.getString("imageNameFirebase", null))
+            rootRef.child("WastebinMonitor/UserImageRef/" + userId).push()
+                    .setValue(backUpPref.getString("imageNameFirebase", null))
                     .addOnCompleteListener(task1 -> {
                         backUpPref.edit().remove("imageNameFirebase").apply();
                         DateWiseTotalCount();
                     });
-
         } else {
             DateWiseTotalCount();
         }
     }
 
     private void DateWiseTotalCount() {
-        Log.d("TAG", "checkImageSto:D ");
         if (backUpPref.getBoolean("DateWiseTotalCount", false)) {
-
             rootRef.child("WastebinMonitor/Summary/DateWise/" + cmn.getDate() + "/totalCount")
                     .runTransaction(new Transaction.Handler() {
                         @NonNull
@@ -247,9 +234,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void CategoryTotalCount() {
-        Log.d("TAG", "checkImageSto:E ");
         if (backUpPref.getBoolean("CategoryTotalCount", false)) {
-
             rootRef.child("WastebinMonitor/Summary/CategoryWise/totalCount")
                     .runTransaction(new Transaction.Handler() {
                         @NonNull
@@ -277,9 +262,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void DateWiseCatTotalCount() {
-        Log.d("TAG", "checkImageSto:f ");
         if (backUpPref.getBoolean("DateWiseCatTotalCount", false)) {
-
             rootRef.child("WastebinMonitor/Summary/DateWise/" + cmn.getDate() + "/" + backUpPref.getString("cat", null) + "/totalCount")
                     .runTransaction(new Transaction.Handler() {
                         @NonNull
@@ -307,7 +290,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void CategoryWiseTotalCount() {
-        Log.d("TAG", "checkImageSto:G ");
         if (backUpPref.getBoolean("CategoryWiseTotalCount", false)) {
             rootRef.child("WastebinMonitor/Summary/CategoryWise/" + backUpPref.getString("cat", null) + "/totalCount")
                     .runTransaction(new Transaction.Handler() {
@@ -342,10 +324,15 @@ public class MainActivity extends AppCompatActivity {
                 .addOnCompleteListener(task1 -> {
                     try {
                         task1.getResult(ApiException.class);
+                        cmn.closeDialog(MainActivity.this);
                         if (task1.isSuccessful()) {
                             wasteBinOptionsDialog();
+                        } else {
+                            isPass = true;
                         }
                     } catch (ApiException e) {
+                        cmn.closeDialog(MainActivity.this);
+                        isPass = true;
                         if (e instanceof ResolvableApiException) {
                             try {
                                 ResolvableApiException resolvable = (ResolvableApiException) e;
@@ -355,6 +342,9 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     }
+                }).addOnFailureListener(e -> {
+                    cmn.closeDialog(MainActivity.this);
+                    isPass = true;
                 });
     }
 
@@ -791,20 +781,20 @@ public class MainActivity extends AppCompatActivity {
                                     fos.flush();
                                     fos.close();
 
-                                   new Thread(() -> {
-                                       backUpPref.edit().putInt("key", key).apply();
-                                       backUpPref.edit().putString("imageName", file.getName()).apply();
-                                       backUpPref.edit().putString("imageNameFirebase", imgName).apply();
-                                       backUpPref.edit().putString("year", cmn.getYear()).apply();
-                                       backUpPref.edit().putString("month", cmn.getMonth()).apply();
-                                       backUpPref.edit().putString("date", cmn.getDate()).apply();
-                                       backUpPref.edit().putString("cat", cat).apply();
-                                       backUpPref.edit().putString("data", data_to_upload.toString()).apply();
-                                       backUpPref.edit().putBoolean("DateWiseTotalCount", true).apply();
-                                       backUpPref.edit().putBoolean("CategoryTotalCount", true).apply();
-                                       backUpPref.edit().putBoolean("DateWiseCatTotalCount", true).apply();
-                                       backUpPref.edit().putBoolean("CategoryWiseTotalCount", true).apply();
-                                   }).start();
+                                    new Thread(() -> {
+                                        backUpPref.edit().putInt("key", key).apply();
+                                        backUpPref.edit().putString("imageName", file.getName()).apply();
+                                        backUpPref.edit().putString("imageNameFirebase", imgName).apply();
+                                        backUpPref.edit().putString("year", cmn.getYear()).apply();
+                                        backUpPref.edit().putString("month", cmn.getMonth()).apply();
+                                        backUpPref.edit().putString("date", cmn.getDate()).apply();
+                                        backUpPref.edit().putString("cat", cat).apply();
+                                        backUpPref.edit().putString("data", data_to_upload.toString()).apply();
+                                        backUpPref.edit().putBoolean("DateWiseTotalCount", true).apply();
+                                        backUpPref.edit().putBoolean("CategoryTotalCount", true).apply();
+                                        backUpPref.edit().putBoolean("DateWiseCatTotalCount", true).apply();
+                                        backUpPref.edit().putBoolean("CategoryWiseTotalCount", true).apply();
+                                    }).start();
 
                                     stoRef.child(imgName)
                                             .putBytes(toUpload.toByteArray())
@@ -1177,7 +1167,6 @@ public class MainActivity extends AppCompatActivity {
             return view;
         }
 
-
     }
 
     public void fetchWardBoundariesData() {
@@ -1258,6 +1247,4 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
-
 }

@@ -1,5 +1,6 @@
 package com.wevois.wastebinmonitor;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -16,29 +17,16 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceView;
-import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.MutableData;
-import com.google.firebase.database.Transaction;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -80,6 +68,7 @@ public class CommonFunctions {
         return new SimpleDateFormat("MMMM", Locale.US).format(new Date());
     }
 
+    @SuppressLint("SimpleDateFormat")
     public String getDate() {
         return new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     }
