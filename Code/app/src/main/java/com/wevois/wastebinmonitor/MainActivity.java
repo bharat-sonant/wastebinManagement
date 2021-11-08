@@ -81,9 +81,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -141,17 +143,13 @@ public class MainActivity extends AppCompatActivity {
         ListView parentLv = findViewById(R.id.parent_list);
         adapterForExpandableList = new AdapterForExpandableList();
         parentLv.setAdapter(adapterForExpandableList);
-
         getPathForImages();
         attachListener();
-        findViewById(R.id.capture_wastebin_image_btn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (isPass) {
-                    isPass = false;
-                    cmn.setProgressDialog("", "Please wait", MainActivity.this, MainActivity.this);
-                    checkImageSto();
-                }
+        findViewById(R.id.capture_wastebin_image_btn).setOnClickListener(view -> {
+            if (isPass) {
+                isPass = false;
+                cmn.setProgressDialog("", "Please wait", MainActivity.this, MainActivity.this);
+                checkImageSto();
             }
         });
 
@@ -343,9 +341,9 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 }).addOnFailureListener(e -> {
-                    cmn.closeDialog(MainActivity.this);
-                    isPass = true;
-                });
+            cmn.closeDialog(MainActivity.this);
+            isPass = true;
+        });
     }
 
     private void attachListener() {
@@ -453,7 +451,23 @@ public class MainActivity extends AppCompatActivity {
                 }
                 imagesList.add(new ModelForImages(str[1], str[2], Integer.parseInt(str[3]), file));
             }
+            Collections.sort(imagesList, (modelForImages, t1) -> {
+                try {
+                    Date d1 = new SimpleDateFormat("yyyy-MM-dd").parse(modelForImages.getDate());
+                    Date d2 = new SimpleDateFormat("yyyy-MM-dd").parse(t1.getDate());
+                    if(d1.before(d2)){
+                        return 1;
+                    } else if (d1.after(d2)){
+                        return -1;
+                    } else{
+                        return t1.getTime().compareToIgnoreCase(modelForImages.getTime());
+                    }
 
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                return 0;
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -777,7 +791,7 @@ public class MainActivity extends AppCompatActivity {
                                     FileOutputStream fos = new FileOutputStream(file);
                                     BitmapFactory.decodeByteArray(toUpload.toByteArray(), 0, toUpload.toByteArray().length)
                                             .compress(Bitmap.CompressFormat.JPEG, 100, fos);
-                                    imagesList.add(new ModelForImages(cmn.getDate(), cmn.getTime(), Integer.parseInt(cat), file));
+                                    imagesList.add(0,new ModelForImages(cmn.getDate(), cmn.getTime(), Integer.parseInt(cat), file));
                                     fos.flush();
                                     fos.close();
 
@@ -905,6 +919,7 @@ public class MainActivity extends AppCompatActivity {
                                                             })).start();
 
                                                     cmn.closeDialog(MainActivity.this);
+
                                                     adapterForExpandableList.notifyDataSetChanged();
                                                 }
                                             });

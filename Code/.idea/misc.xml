@@ -5,7 +5,9 @@
       <map>
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.1685185185185185" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/drawable/bottom_corners.xml" value="0.14629629629629629" />
+        <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/drawable/bottom_left_corner.xml" value="0.18518518518518517" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/drawable/sign_in_btn_shape.xml" value="0.14629629629629629" />
+        <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/drawable/top_rounded_corner.xml" value="0.22552083333333334" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/layout/AndroidManifest.xml" value="0.19583333333333333" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/layout/activity_login.xml" value="0.21041666666666667" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/layout/activity_main.xml" value="0.18729096989966554" />
@@ -18,6 +20,8 @@
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/layout/image_options_lv_layout.xml" value="0.21041666666666667" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/layout/image_recyler_view_layout.xml" value="0.21041666666666667" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/layout/info_dialog_layout.xml" value="0.21041666666666667" />
+        <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/menu/main_activity_menu.xml" value="0.209375" />
+        <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/mipmap-anydpi-v26/application_icon.xml" value="0.22552083333333334" />
       </map>
     </option>
   </component>
