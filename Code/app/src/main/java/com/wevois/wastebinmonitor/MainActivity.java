@@ -14,6 +14,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
@@ -70,6 +71,8 @@ import com.google.maps.android.PolyUtil;
 import com.wevois.wastebinmonitor.ModelClasses.ModelForImages;
 import com.wevois.wastebinmonitor.ModelClasses.ModelWastebinTypes;
 
+import org.apache.commons.net.ntp.NTPUDPClient;
+import org.apache.commons.net.ntp.TimeInfo;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,7 +82,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -114,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
     Location lastKnownLocation;
     public static final int FOCUS_AREA_SIZE = 300;
     SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    public static final String TIME_SERVER = "time-a.nist.gov";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         setPageTitle();
         inIt();
+        new Thread(() -> checkTime()).start();
     }
 
     @SuppressLint("SetTextI18n")
@@ -134,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
         TextView helpLineTv = findViewById(R.id.helpline_tv);
         fetchWastebinTypes(MainActivity.this);
         cmn.fetchHelplineNumber(MainActivity.this, helpLineTv);
+        new Thread(() -> cmn.fetchDistanceValidations(MainActivity.this)).start();
         runOnUiThread(this::fetchWardBoundariesData);
         rootRef = cmn.getDatabaseRef(this);
         pref = getSharedPreferences("LoginDetails", MODE_PRIVATE);
@@ -455,11 +463,11 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     Date d1 = new SimpleDateFormat("yyyy-MM-dd").parse(modelForImages.getDate());
                     Date d2 = new SimpleDateFormat("yyyy-MM-dd").parse(t1.getDate());
-                    if(d1.before(d2)){
+                    if (d1.before(d2)) {
                         return 1;
-                    } else if (d1.after(d2)){
+                    } else if (d1.after(d2)) {
                         return -1;
-                    } else{
+                    } else {
                         return t1.getTime().compareToIgnoreCase(modelForImages.getTime());
                     }
 
@@ -791,11 +799,12 @@ public class MainActivity extends AppCompatActivity {
                                     FileOutputStream fos = new FileOutputStream(file);
                                     BitmapFactory.decodeByteArray(toUpload.toByteArray(), 0, toUpload.toByteArray().length)
                                             .compress(Bitmap.CompressFormat.JPEG, 100, fos);
-                                    imagesList.add(0,new ModelForImages(cmn.getDate(), cmn.getTime(), Integer.parseInt(cat), file));
+                                    imagesList.add(0, new ModelForImages(cmn.getDate(), cmn.getTime(), Integer.parseInt(cat), file));
                                     fos.flush();
                                     fos.close();
 
                                     new Thread(() -> {
+                                        savePrevLatLongToSP(Integer.parseInt(cat));
                                         backUpPref.edit().putInt("key", key).apply();
                                         backUpPref.edit().putString("imageName", file.getName()).apply();
                                         backUpPref.edit().putString("imageNameFirebase", imgName).apply();
@@ -938,6 +947,23 @@ public class MainActivity extends AppCompatActivity {
             });
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void savePrevLatLongToSP(int cat) {
+        switch (cat) {
+            case 1:
+                pref.edit().putFloat("1prev_lat", (float) lastKnownLocation.getLatitude()).apply();
+                pref.edit().putFloat("1prev_long", (float) lastKnownLocation.getLongitude()).apply();
+                break;
+            case 2:
+                pref.edit().putFloat("2prev_lat", (float) lastKnownLocation.getLatitude()).apply();
+                pref.edit().putFloat("2prev_long", (float) lastKnownLocation.getLongitude()).apply();
+                break;
+            case 3:
+                pref.edit().putFloat("3prev_lat", (float) lastKnownLocation.getLatitude()).apply();
+                pref.edit().putFloat("3prev_long", (float) lastKnownLocation.getLongitude()).apply();
+                break;
         }
     }
 
@@ -1089,7 +1115,12 @@ public class MainActivity extends AppCompatActivity {
                     if (isCleanDialog != null) {
                         isCleanDialog.dismiss();
                     }
-                    isCleanDialog();
+                    if (checkForDistanceVal(i)) {
+                        isCleanDialog();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Please move to another location", Toast.LENGTH_SHORT).show();
+                        isPass = true;
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -1108,6 +1139,50 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
             return view;
+        }
+
+        private boolean checkForDistanceVal(int pos) {
+            if (pref.getFloat("1prev_lat", 0) != 0 && pref.getFloat("1prev_long", 0) != 0) {
+                if (pref.getFloat("2prev_lat", 0) != 0 && pref.getFloat("2prev_long", 0) != 0) {
+                    if (pref.getFloat("3prev_lat", 0) != 0 && pref.getFloat("3prev_long", 0) != 0) {
+                        try {
+                            JSONObject valO = new JSONObject(pref.getString("WastebinDistanceValidation", ""));
+                            switch (pos) {
+                                case 0:
+                                    Log.d("TAG", "checkForDistanceVal:A ");
+                                    return cmn.distance((float) lastKnownLocation.getLatitude(),
+                                            (float) lastKnownLocation.getLongitude(),
+                                            pref.getFloat("1prev_lat", 0),
+                                            pref.getFloat("1prev_long", 0)) > (int) valO.get("secondary_storage_point");
+                                case 1:
+                                    Log.d("TAG", "checkForDistanceVal:B ");
+                                    return cmn.distance((float) lastKnownLocation.getLatitude(),
+                                            (float) lastKnownLocation.getLongitude(),
+                                            pref.getFloat("2prev_lat", 0),
+                                            pref.getFloat("2prev_long", 0)) > (int) valO.get("depot");
+                                case 2:
+                                    Log.d("TAG", "checkForDistanceVal:C ");
+                                    return cmn.distance((float) lastKnownLocation.getLatitude(),
+                                            (float) lastKnownLocation.getLongitude(),
+                                            pref.getFloat("3prev_lat", 0),
+                                            pref.getFloat("3prev_long", 0)) > (int) valO.get("litter_bins");
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    } else {
+                        return true;
+                    }
+
+                } else {
+                    return true;
+                }
+
+            } else {
+                return true;
+            }
+            return true;
         }
     }
 
@@ -1258,6 +1333,63 @@ public class MainActivity extends AppCompatActivity {
                     prepareDS();
                 }
             });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressLint("StaticFieldLeak")
+    private void checkTime() {
+        new AsyncTask<Void, Void, Long>() {
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+            }
+
+            @Override
+            protected Long doInBackground(Void... p) {
+                long returnTime = 0;
+                try {
+                    NTPUDPClient timeClient = new NTPUDPClient();
+                    timeClient.setDefaultTimeout(1000);
+                    InetAddress inetAddress = InetAddress.getByName(TIME_SERVER);
+                    TimeInfo timeInfo = timeClient.getTime(inetAddress);
+                    returnTime = timeInfo.getMessage().getTransmitTimeStamp().getTime();
+                    return returnTime;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return returnTime;
+            }
+
+            @Override
+            protected void onPostExecute(Long result) {
+                if (result != 0) {
+                    Date date = new Date(result);
+                    Date dates = new Date(new Date().getTime());
+                    int timeGap = cmn.timeDiff(date, dates);
+                    Log.d("TAG", "onPostExecute: " + timeGap);
+                    if (timeGap == 0) {
+                        Log.d("TAG", "onPostExecute:A ");
+                    } else {
+                        dialogForTime();
+                    }
+                } else {
+                    dialogForTime();
+                }
+            }
+        }.execute();
+    }
+
+    private void dialogForTime() {
+        try {
+            AlertDialog dialog = new AlertDialog.Builder(this)
+                    .setTitle("Alert")
+                    .setCancelable(false)
+                    .setMessage("Device Time setting are not correctly working")
+                    .setPositiveButton("Close",
+                            (dialog1, which) -> finish()).create();
+            dialog.show();
         } catch (Exception e) {
             e.printStackTrace();
         }

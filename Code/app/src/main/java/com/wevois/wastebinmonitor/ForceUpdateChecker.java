@@ -41,7 +41,6 @@ public class ForceUpdateChecker {
                     remoteConfig.getString(KEY_CURRENT_VERSION);
                 }
 
-
                 if (remoteConfig.getBoolean(KEY_UPDATE_REQUIRED)) {
                     String currentVersion = remoteConfig.getString(KEY_CURRENT_VERSION);
                     String appVersion = getAppVersion(context);

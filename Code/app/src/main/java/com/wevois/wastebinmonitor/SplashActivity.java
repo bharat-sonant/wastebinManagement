@@ -45,6 +45,7 @@ public class SplashActivity extends AppCompatActivity implements ForceUpdateChec
         }
         cmn.setLocale(pref.getString("lang", "hi"), SplashActivity.this);
         new Thread(() -> cmn.fetchDaysForDeletingImage(SplashActivity.this)).start();
+        new Thread(() -> cmn.fetchDistanceValidations(SplashActivity.this)).start();
         ForceUpdateChecker.with(this).onUpdateNeeded(this).check();
     }
 
