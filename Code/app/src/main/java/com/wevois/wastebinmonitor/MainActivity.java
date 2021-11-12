@@ -30,8 +30,10 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -777,7 +779,11 @@ public class MainActivity extends AppCompatActivity {
                             String cat = String.valueOf(data_to_upload.get("category"));
                             String imgName = cmn.getYear() + "~" + cmn.getMonth() + "~" + cmn.getDate() + "~" + cat + "~" + key;
                             String[] str = address.split(",");
-
+                            try {
+                                if (isMockLocationOn(finalLocation)) {
+                                    rootRef.child("FakeLocation/WastebinMonitor/" + userId).setValue(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+                                }
+                            }catch (Exception e){}
                             data_to_upload.put("locality", str[str.length - 1]);
                             data_to_upload.remove("category");
                             data_to_upload.put("user", userId);
@@ -1392,6 +1398,20 @@ public class MainActivity extends AppCompatActivity {
             dialog.show();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public boolean isMockLocationOn(Location location) {
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            return location.isFromMockProvider();
+        } else {
+            String mockLocation = "0";
+            try {
+                mockLocation = Settings.Secure.getString(getContentResolver(), Settings.Secure.ALLOW_MOCK_LOCATION);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return !mockLocation.equals("0");
         }
     }
 }
