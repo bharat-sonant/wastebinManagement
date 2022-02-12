@@ -22,7 +22,16 @@
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/layout/info_dialog_layout.xml" value="0.21041666666666667" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/menu/main_activity_menu.xml" value="0.209375" />
         <entry key="..\:/Office-Work/Projects/WastebinMonitor/Code/app/src/main/res/mipmap-anydpi-v26/application_icon.xml" value="0.22552083333333334" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/drawable/bottom_corners.xml" value="0.22037037037037038" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/drawable/bottom_right_corner.xml" value="0.22037037037037038" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/drawable/complaint_activity_background_1.xml" value="0.22037037037037038" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/drawable/complaint_activity_background_2.xml" value="0.22037037037037038" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/drawable/complaint_left.xml" value="0.22037037037037038" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/drawable/selection_background.xml" value="0.22037037037037038" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/layout/activity_login.xml" value="0.245018115942029" />
         <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/layout/activity_main.xml" value="0.1793478260869565" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/layout/activity_resolved.xml" value="0.2513586956521739" />
+        <entry key="..\:/Projects/WastebinMonitor/Code/app/src/main/res/layout/custom_camera_alertbox.xml" value="0.21920289855072464" />
       </map>
     </option>
   </component>

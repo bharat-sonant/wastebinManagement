@@ -11,4 +11,5 @@
     <color name="colorPrimaryDark">#10AD24</color>
     <color name="colorAccent">#4AAD41</color>
     <color name="splash_bg">#32BF5E</color>
+    <color name="push_notification_icon_color">#333333</color>
 </resources>

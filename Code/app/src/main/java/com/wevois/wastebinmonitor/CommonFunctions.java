@@ -17,14 +17,20 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
@@ -290,26 +296,47 @@ public class CommonFunctions {
         }
     }
 
+    public void fetchWastebinMonitorSettings(Context context) {
+        try {
+            getDatabaseRef(context).child("Settings/WastebinMonitorApplicationSettings").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    if (snapshot.getValue()!=null){
+                        if (snapshot.hasChild("loginMessage")) {
+                            getDatabaseSp(context).edit().putString("loginMessage", snapshot.child("loginMessage").getValue().toString()).apply();
+                        }
+                        if (snapshot.hasChild("notificationMessage")) {
+                            getDatabaseSp(context).edit().putString("notificationMessage", snapshot.child("notificationMessage").getValue().toString()).apply();
+                        }
+                        if (snapshot.hasChild("notificationTitle")) {
+                            getDatabaseSp(context).edit().putString("notificationTitle", snapshot.child("notificationTitle").getValue().toString()).apply();
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void callOnNumber(Context context, TextView textView) {
         textView.setOnClickListener(view -> {
-
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
             alertBuilder.setCancelable(true);
             alertBuilder.setMessage( R.string.helpline_message);
-
-            alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    Intent callIntent = new Intent(Intent.ACTION_CALL);
-                    callIntent.setData(Uri.parse("tel:" + "014127427400"));//change the number
-                    context.startActivity(callIntent);
-                }
+            alertBuilder.setPositiveButton(android.R.string.yes, (dialog, which) -> {
+                Intent callIntent = new Intent(Intent.ACTION_CALL);
+                callIntent.setData(Uri.parse("tel:" + textView.getText().toString()));//change the number
+                context.startActivity(callIntent);
             });
-
             alertBuilder.setNegativeButton(android.R.string.no, (dialog, which) -> dialog.dismiss());
             AlertDialog alert = alertBuilder.create();
             alert.show();
-
         });
     }
 

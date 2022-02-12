@@ -14,7 +14,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
@@ -121,7 +120,8 @@ public class MainActivity extends AppCompatActivity {
     Location lastKnownLocation;
     public static final int FOCUS_AREA_SIZE = 300;
     SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    public static final String TIME_SERVER = "time-a.nist.gov";
+//    public static final String TIME_SERVER = "time-a.nist.gov";
+    public static final String TIME_SERVER = "ntp.xs4all.nl";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -162,13 +162,13 @@ public class MainActivity extends AppCompatActivity {
                 checkImageSto();
             }
         });
-
     }
 
     private void checkImageSto() {
         if (backUpPref.getString("imageName", null) != null) {
             StorageMetadata metadata = new StorageMetadata.Builder().setContentType("json").build();
-            stoRef.child(backUpPref.getString("imageNameFirebase", null))
+            cmn.getStoRef(MainActivity.this).child("WastebinMonitorImages/" + backUpPref.getString("year","") + "/" + backUpPref.getString("month","")
+                    + "/" + backUpPref.getString("date","")).child(backUpPref.getString("imageNameFirebase", null))
                     .putFile(Uri.fromFile(getFile(backUpPref.getString("imageName", null))), metadata)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
         if (backUpPref.getString("data", null) != null) {
             try {
                 JSONObject obj = new JSONObject(backUpPref.getString("data", null));
-                rootRef.child("WastebinMonitor/ImagesData/" + cmn.getYear() + "/" + cmn.getMonth() + "/" + cmn.getDate() + "/" + backUpPref.getString("cat", null) + "/" + backUpPref.getInt("key", 0))
+                rootRef.child("WastebinMonitor/ImagesData/" + backUpPref.getString("year","") + "/" + backUpPref.getString("month","") + "/" + backUpPref.getString("date","") + "/" + backUpPref.getString("cat", null) + "/" + backUpPref.getInt("key", 0))
                         .setValue(new Gson().fromJson(obj.toString(), new TypeToken<HashMap<String, Object>>() {
                         }.getType()))
                         .addOnCompleteListener(task1 -> {
@@ -215,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void DateWiseTotalCount() {
         if (backUpPref.getBoolean("DateWiseTotalCount", false)) {
-            rootRef.child("WastebinMonitor/Summary/DateWise/" + cmn.getDate() + "/totalCount")
+            rootRef.child("WastebinMonitor/Summary/DateWise/" + backUpPref.getString("date","") + "/totalCount")
                     .runTransaction(new Transaction.Handler() {
                         @NonNull
                         @Override
@@ -271,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void DateWiseCatTotalCount() {
         if (backUpPref.getBoolean("DateWiseCatTotalCount", false)) {
-            rootRef.child("WastebinMonitor/Summary/DateWise/" + cmn.getDate() + "/" + backUpPref.getString("cat", null) + "/totalCount")
+            rootRef.child("WastebinMonitor/Summary/DateWise/" + backUpPref.getString("date","") + "/" + backUpPref.getString("cat", null) + "/totalCount")
                     .runTransaction(new Transaction.Handler() {
                         @NonNull
                         @Override
@@ -472,7 +472,6 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         return t1.getTime().compareToIgnoreCase(modelForImages.getTime());
                     }
-
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
@@ -1370,18 +1369,49 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(Long result) {
+                Log.d("TAG", "onPostExecute: B " );
                 if (result != 0) {
                     Date date = new Date(result);
                     Date dates = new Date(new Date().getTime());
                     int timeGap = cmn.timeDiff(date, dates);
                     Log.d("TAG", "onPostExecute: " + timeGap);
-                    if (timeGap == 0) {
+                    if (timeGap < 5) {
                         Log.d("TAG", "onPostExecute:A ");
                     } else {
-                        dialogForTime();
+                        rootRef.child("ServerTimeResponse/WastebinMonitorApp/ServerTimeNotMatched/"+userId).runTransaction(new Transaction.Handler() {
+                            @NonNull
+                            @Override
+                            public Transaction.Result doTransaction(@NonNull MutableData currentData) {
+                                if (currentData.getValue() == null) {
+                                    currentData.setValue(1);
+                                } else {
+                                    currentData.setValue(String.valueOf(Integer.parseInt(currentData.getValue().toString()) + 1));
+                                }
+                                return Transaction.success(currentData);
+                            }
+
+                            @Override
+                            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData) {
+                            }
+                        });
                     }
                 } else {
-                    dialogForTime();
+                    rootRef.child("ServerTimeResponse/WastebinMonitorApp/ServerTimeNotResponse/"+userId).runTransaction(new Transaction.Handler() {
+                        @NonNull
+                        @Override
+                        public Transaction.Result doTransaction(@NonNull MutableData currentData) {
+                            if (currentData.getValue() == null) {
+                                currentData.setValue(1);
+                            } else {
+                                currentData.setValue(String.valueOf(Integer.parseInt(currentData.getValue().toString()) + 1));
+                            }
+                            return Transaction.success(currentData);
+                        }
+
+                        @Override
+                        public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData) {
+                        }
+                    });
                 }
             }
         }.execute();

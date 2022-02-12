@@ -85,7 +85,6 @@
         android:paddingBottom="8dp"
         android:text="@string/helpline_number"/>
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"

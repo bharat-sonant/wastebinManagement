@@ -72,6 +72,7 @@
         android:weightSum="2">
 
         <TextView
+            android:id="@+id/loginMessage"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"

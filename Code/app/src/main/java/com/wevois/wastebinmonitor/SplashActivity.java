@@ -8,6 +8,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.app.LauncherActivity;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -19,7 +20,18 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 
-public class SplashActivity extends AppCompatActivity implements ForceUpdateChecker.OnUpdateNeededListener {
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import java.util.HashMap;
+
+public class SplashActivity extends AppCompatActivity {
     CommonFunctions cmn = new CommonFunctions();
     SharedPreferences pref;
     boolean checkPermission = false;
@@ -30,15 +42,19 @@ public class SplashActivity extends AppCompatActivity implements ForceUpdateChec
             android.Manifest.permission.ACCESS_FINE_LOCATION
     };
 
+    private AppUpdateManager mAppUpdateManager;
+    private static final int RC_APP_UPDATE = 11;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         pref = getSharedPreferences("LoginDetails", MODE_PRIVATE);
-//        pref.edit().putString("dbRef", "https://iejaipurgreater.firebaseio.com/").apply();
-//        pref.edit().putString("stoRef", "gs://dtdnavigator.appspot.com/Jaipur-Greater").apply();
-        pref.edit().putString("dbRef", "https://dtdnavigatortesting.firebaseio.com/").apply();
-        pref.edit().putString("stoRef", "gs://dtdnavigator.appspot.com/Test").apply();
+        cmn.fetchWastebinMonitorSettings(this);
+        pref.edit().putString("dbRef", "https://iejaipurgreater.firebaseio.com/").apply();
+        pref.edit().putString("stoRef", "gs://dtdnavigator.appspot.com/Jaipur-Greater").apply();
+//        pref.edit().putString("dbRef", "https://dtdnavigatortesting.firebaseio.com/").apply();
+//        pref.edit().putString("stoRef", "gs://dtdnavigator.appspot.com/Test").apply();
         if (!pref.getString("date", " ").equals(cmn.getDate())) {
             pref.edit().putString("date", cmn.getDate()).apply();
             pref.edit().putBoolean("isDeleteImages", true).apply();
@@ -46,7 +62,53 @@ public class SplashActivity extends AppCompatActivity implements ForceUpdateChec
         cmn.setLocale(pref.getString("lang", "hi"), SplashActivity.this);
         new Thread(() -> cmn.fetchDaysForDeletingImage(SplashActivity.this)).start();
         new Thread(() -> cmn.fetchDistanceValidations(SplashActivity.this)).start();
-        ForceUpdateChecker.with(this).onUpdateNeeded(this).check();
+        new Thread(() -> {
+            cmn.getDatabaseRef(this).child("WastebinMonitor/Users/" + pref.getString("uid","")+"/token").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    if (snapshot.getValue() == null) {
+                        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                HashMap<String, Object> hashMap = new HashMap<>();
+                                hashMap.put("token", task.getResult());
+                                cmn.getDatabaseRef(SplashActivity.this).child("WastebinMonitor/Users/" + pref.getString("uid","") + "/").updateChildren(hashMap);
+                            }
+                        });
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+
+        }).start();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        UpdateApp();
+    }
+
+    public void UpdateApp(){
+        mAppUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
+        mAppUpdateManager.getAppUpdateInfo().addOnSuccessListener(appUpdateInfo -> {
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                    && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE /*AppUpdateType.IMMEDIATE*/)){
+                try {
+                    mAppUpdateManager.startUpdateFlowForResult(
+                            appUpdateInfo, AppUpdateType.IMMEDIATE /*AppUpdateType.IMMEDIATE*/, SplashActivity.this, RC_APP_UPDATE);
+
+                } catch (IntentSender.SendIntentException e) {
+                    e.printStackTrace();
+                }
+            }else {
+                checkPermission();
+            }
+        });
     }
 
     public void checkPermission() {
@@ -114,43 +176,6 @@ public class SplashActivity extends AppCompatActivity implements ForceUpdateChec
         }
     }
 
-    @Override
-    public void onUpdateNeeded(String updateUrl) {
-        try {
-            if (updateUrl == null) {
-                checkPermission();
-            } else {
-                AlertDialog dialog = new AlertDialog.Builder(this)
-                        .setTitle("New version available")
-                        .setCancelable(false)
-                        .setMessage("Please, update app to new version to continue service.")
-                        .setPositiveButton("Update",
-                                (dialog1, which) -> redirectStore(updateUrl)).setNegativeButton("No, thanks",
-                                (dialog12, which) -> {
-                                    if (new ForceUpdateChecker(SplashActivity.this, SplashActivity.this).mustUpdate()) {
-                                        finish();
-                                    } else {
-                                        dialog12.dismiss();
-                                    }
-                                }).create();
-                dialog.show();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void redirectStore(String updateUrl) {
-        try {
-            final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(updateUrl));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
     private void proceed() {
         new CountDownTimer(3000, 1000) {
             @Override
@@ -163,7 +188,6 @@ public class SplashActivity extends AppCompatActivity implements ForceUpdateChec
                     startActivity(new Intent(SplashActivity.this, MainActivity.class));
                 } else {
                     startActivity(new Intent(SplashActivity.this, LoginActivity.class));
-
                 }
                 finish();
             }
